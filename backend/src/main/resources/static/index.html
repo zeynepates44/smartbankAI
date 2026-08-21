@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="tr" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartBank AI - Müşteri Teklif Analiz Portalı</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen font-sans transition-colors duration-200">
+
+<!-- Üst Kurumsal Header -->
+<header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 shadow-sm transition-colors duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-lg bg-blue-600 dark:bg-blue-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+                <i class="fa-solid fa-building-columns text-lg"></i>
+            </div>
+            <div>
+                <span class="text-lg font-bold tracking-tight text-slate-900 dark:text-white">SmartBank</span>
+                <span class="text-xs uppercase px-1.5 py-0.5 rounded font-semibold bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400 ml-1">AI Engine</span>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800">
+                    <span class="w-2 h-2 mr-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                    Sistem Canlı
+                </span>
+
+            <!-- Gece / Gündüz Teması Değiştirme Butonu -->
+            <button id="themeToggleBtn" onclick="toggleTheme()" class="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                <i id="themeIcon" class="fa-solid fa-moon"></i>
+            </button>
+        </div>
+    </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- Üst Metrik Kartları -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors duration-200">
+            <p class="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Toplam Müşteri</p>
+            <p class="text-2xl font-bold text-slate-900 dark:text-white mt-1" id="stat-total-customers">0</p>
+        </div>
+        <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors duration-200">
+            <p class="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">ML Model Doğruluğu</p>
+            <p class="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">%99.80</p>
+        </div>
+        <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors duration-200">
+            <p class="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Model Tipi</p>
+            <p class="text-2xl font-bold text-slate-800 dark:text-slate-200 mt-1">Random Forest</p>
+        </div>
+        <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors duration-200">
+            <p class="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Tahmin Yanıt Süresi</p>
+            <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">< 15 ms</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <!-- Sol: Müşteri Tablosu & Arama -->
+        <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col transition-colors duration-200">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-address-book text-blue-600 dark:text-blue-400"></i> Müşteri Portföy Listesi
+                    </h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Analiz etmek istediğiniz müşteriyi tablodan seçebilirsiniz.</p>
+                </div>
+                <div class="relative w-full sm:w-64">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" id="searchInput" placeholder="Müşteri ID veya Kredi Skoru Ara..."
+                           class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition">
+                </div>
+            </div>
+
+            <div class="overflow-x-auto max-h-[520px] rounded-lg border border-slate-200 dark:border-slate-800">
+                <table class="w-full text-left text-sm text-slate-700 dark:text-slate-300">
+                    <thead class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 uppercase text-xs sticky top-0 border-b border-slate-200 dark:border-slate-800">
+                    <tr>
+                        <th class="px-4 py-3 font-semibold">ID</th>
+                        <th class="px-4 py-3 font-semibold">Yaş</th>
+                        <th class="px-4 py-3 font-semibold">Aylık Gelir</th>
+                        <th class="px-4 py-3 font-semibold">Kredi Skoru</th>
+                        <th class="px-4 py-3 font-semibold">Bakiye</th>
+                        <th class="px-4 py-3 font-semibold text-right">Aksiyon</th>
+                    </tr>
+                    </thead>
+                    <tbody id="customerTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
+                    <tr>
+                        <td colspan="6" class="text-center py-10 text-slate-500">
+                            <i class="fa-solid fa-circle-notch animate-spin mr-2 text-blue-600"></i> Veriler yükleniyor...
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Sağ: AI Teklif Analiz Kartı -->
+        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm transition-colors duration-200 flex flex-col justify-between">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                    <i class="fa-solid fa-microchip text-blue-600 dark:text-blue-400"></i> AI Karar & Teklif Paneli
+                </h2>
+
+                <div id="aiPlaceholder" class="text-center py-20 text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                    <i class="fa-solid fa-chart-simple text-4xl mb-3 text-slate-300 dark:text-slate-700"></i>
+                    <p class="text-sm font-medium">Analiz sonuçlarını görüntülemek için tablodan bir müşteriye ait <span class="text-blue-600 dark:text-blue-400 font-semibold">"AI Analiz"</span> butonuna basın.</p>
+                </div>
+
+                <div id="aiResultCard" class="hidden space-y-5">
+
+                    <!-- Müşteri Başlık Bilgisi -->
+                    <div class="p-4 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                        <div>
+                            <span class="text-xs font-semibold uppercase text-slate-400">Seçilen Profil</span>
+                            <p class="text-lg font-bold text-slate-900 dark:text-white" id="resCustomerId">-</p>
+                        </div>
+                        <span class="text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1 rounded-full shadow-sm" id="resAge">-</span>
+                    </div>
+
+                    <!-- AI Tavsiye Kartı -->
+                    <div class="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/20 rounded-xl border border-blue-200 dark:border-blue-800/60">
+                        <span class="text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">Model Teklif Önerisi</span>
+                        <p class="text-2xl font-extrabold text-blue-900 dark:text-white mt-1 tracking-tight" id="resOffer">-</p>
+
+                        <div class="mt-4">
+                            <div class="flex justify-between text-xs mb-1.5 font-medium">
+                                <span class="text-slate-600 dark:text-slate-400">Tahmin Güven Skoru</span>
+                                <span class="text-blue-700 dark:text-blue-400 font-bold" id="resConfidence">-%</span>
+                            </div>
+                            <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2">
+                                <div id="resConfidenceBar" class="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Finansal Özellikler -->
+                    <div class="bg-slate-50 dark:bg-slate-950 rounded-xl p-4 border border-slate-200 dark:border-slate-800 space-y-2.5 text-xs">
+                        <div class="flex justify-between items-center py-1 border-b border-slate-200/60 dark:border-slate-800/80">
+                            <span class="text-slate-500 dark:text-slate-400">Aylık Gelir / Gider:</span>
+                            <span class="text-slate-800 dark:text-slate-200 font-semibold" id="resIncomeExpense">-</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1 border-b border-slate-200/60 dark:border-slate-800/80">
+                            <span class="text-slate-500 dark:text-slate-400">Toplam Borç Tutarı:</span>
+                            <span class="text-rose-600 dark:text-rose-400 font-semibold" id="resDebt">-</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1 border-b border-slate-200/60 dark:border-slate-800/80">
+                            <span class="text-slate-500 dark:text-slate-400">Hesap Bakiyesi:</span>
+                            <span class="text-emerald-600 dark:text-emerald-400 font-semibold" id="resBalance">-</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1">
+                            <span class="text-slate-500 dark:text-slate-400">Geciken Ödeme Adedi:</span>
+                            <span class="text-amber-600 dark:text-amber-400 font-semibold" id="resLatePayment">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 text-center">
+                <span class="text-[11px] text-slate-400 dark:text-slate-600">SmartBank AI Decision System v1.0</span>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script>
+    let allCustomers = [];
+
+    // Tema Ayarı (Light / Dark)
+    function initTheme() {
+        const savedTheme = localStorage.getItem('smartbank-theme') || 'light';
+        setTheme(savedTheme);
+    }
+
+    function toggleTheme() {
+        const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        setTheme(newTheme);
+    }
+
+    function setTheme(theme) {
+        const html = document.documentElement;
+        const icon = document.getElementById('themeIcon');
+        if (theme === 'dark') {
+            html.classList.add('dark');
+            html.classList.remove('light');
+            if (icon) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            }
+            localStorage.setItem('smartbank-theme', 'dark');
+        } else {
+            html.classList.remove('dark');
+            html.classList.add('light');
+            if (icon) {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+            localStorage.setItem('smartbank-theme', 'light');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initTheme();
+        fetchCustomers();
+        document.getElementById('searchInput').addEventListener('input', handleSearch);
+    });
+
+    async function fetchCustomers() {
+        try {
+            const response = await fetch('/api/customers');
+            allCustomers = await response.json();
+            renderCustomerTable(allCustomers.slice(0, 100));
+            document.getElementById('stat-total-customers').innerText = allCustomers.length.toLocaleString();
+        } catch (error) {
+            console.error("Müşteri listesi çekilemedi:", error);
+            document.getElementById('customerTableBody').innerHTML = `
+                <tr><td colspan="6" class="text-center py-8 text-rose-500 font-medium">Müşteri verileri sunucudan yüklenemedi.</td></tr>
+            `;
+        }
+    }
+
+    function renderCustomerTable(customers) {
+        const tbody = document.getElementById('customerTableBody');
+        tbody.innerHTML = '';
+
+        if (customers.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">Eşleşen kayıt bulunamadı.</td></tr>`;
+            return;
+        }
+
+        customers.forEach(c => {
+            const cId = c.customerId ?? c.id;
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition border-b border-slate-100 dark:border-slate-800/80";
+            tr.innerHTML = `
+                <td class="px-4 py-3 font-semibold text-slate-900 dark:text-white">#${cId}</td>
+                <td class="px-4 py-3">${c.age}</td>
+                <td class="px-4 py-3 font-medium">${Number(c.monthlyIncome || 0).toLocaleString()} TL</td>
+                <td class="px-4 py-3">
+                    <span class="px-2 py-0.5 rounded text-xs font-semibold ${c.creditScore >= 700 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'}">
+                        ${c.creditScore}
+                    </span>
+                </td>
+                <td class="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-medium">${Number(c.accountBalance || 0).toLocaleString()} TL</td>
+                <td class="px-4 py-3 text-right">
+                    <button id="btn-analyze-${cId}" onclick="analyzeCustomer(${cId})" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm transition inline-flex items-center gap-1.5">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> AI Analiz
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function handleSearch(e) {
+        const query = e.target.value.toLowerCase().trim();
+        const filtered = allCustomers.filter(c => {
+            const cId = (c.customerId ?? c.id ?? '').toString();
+            const cScore = (c.creditScore ?? '').toString();
+            return cId.includes(query) || cScore.includes(query);
+        });
+        renderCustomerTable(filtered.slice(0, 100));
+    }
+
+    async function analyzeCustomer(customerId) {
+        const btn = document.getElementById(`btn-analyze-${customerId}`);
+        const originalText = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Analiz ediliyor...`;
+        }
+
+        try {
+            const response = await fetch(`/api/customers/${customerId}/recommendation`);
+            if (!response.ok) {
+                throw new Error('API Hatası: ' + response.statusText);
+            }
+            const data = await response.json();
+
+            const c = data.customer;
+            const ai = data.aiRecommendation;
+            const resId = c.customerId ?? c.id ?? customerId;
+
+            document.getElementById('aiPlaceholder').classList.add('hidden');
+            document.getElementById('aiResultCard').classList.remove('hidden');
+
+            document.getElementById('resCustomerId').innerText = `Müşteri #${resId}`;
+            document.getElementById('resAge').innerText = `Yaş: ${c.age}`;
+            document.getElementById('resOffer').innerText = ai.recommended_offer;
+
+            const confPercent = Math.round((ai.confidence || 0) * 100);
+            document.getElementById('resConfidence').innerText = `%${confPercent}`;
+            document.getElementById('resConfidenceBar').style.width = `${confPercent}%`;
+
+            document.getElementById('resIncomeExpense').innerText = `${Number(c.monthlyIncome || 0).toLocaleString()} TL / ${Number(c.monthlyExpense || 0).toLocaleString()} TL`;
+            document.getElementById('resDebt').innerText = `${Number(c.debtAmount || 0).toLocaleString()} TL`;
+            document.getElementById('resBalance').innerText = `${Number(c.accountBalance || 0).toLocaleString()} TL`;
+            document.getElementById('resLatePayment').innerText = `${c.latePaymentCount ?? 0} Adet`;
+
+        } catch (error) {
+            console.error("AI Tahmini alınamadı:", error);
+            alert("Müşteri #" + customerId + " için analiz alınamadı.");
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+    }
+</script>
+</body>
+</html>
