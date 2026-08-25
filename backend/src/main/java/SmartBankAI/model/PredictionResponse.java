@@ -5,25 +5,24 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class PredictionResponse {
 
     @JsonProperty("recommended_offer")
-    private String recommendedOffer;
+    private String recommended_offer;
 
-    @JsonProperty("confidence")
     private Double confidence;
 
     public PredictionResponse() {
     }
 
-    public PredictionResponse(String recommendedOffer, Double confidence) {
-        this.recommendedOffer = recommendedOffer;
+    public PredictionResponse(String recommended_offer, Double confidence) {
+        this.recommended_offer = recommended_offer;
         this.confidence = confidence;
     }
 
-    public String getRecommendedOffer() {
-        return recommendedOffer;
+    public String getRecommended_offer() {
+        return recommended_offer;
     }
 
-    public void setRecommendedOffer(String recommendedOffer) {
-        this.recommendedOffer = recommendedOffer;
+    public void setRecommended_offer(String recommended_offer) {
+        this.recommended_offer = recommended_offer;
     }
 
     public Double getConfidence() {
