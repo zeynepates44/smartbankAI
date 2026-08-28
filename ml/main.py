@@ -1,21 +1,32 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+import os
 import joblib
 import pandas as pd
-import numpy as np
-import os
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="SmartBank AI Decision Engine")
+app = FastAPI(
+    title="SmartBank AI Decision Engine",
+    version="1.0.0"
+)
 
-# Eğitilmiş modeli yükle
-MODEL_PATH = "model.joblib"
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Model yükleme
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "model.joblib")
 model = None
 
 if os.path.exists(MODEL_PATH):
     model = joblib.load(MODEL_PATH)
-    print("[+] Canlı model.joblib başarıyla yüklendi.")
+    print(f"[+] Model basariyla yuklendi: {MODEL_PATH}")
 else:
-    print("[!] UYARI: model.joblib bulunamadı! Fallback modu devrede.")
+    print(f"[!] UYARI: Model dosyasi bulunamadi: {MODEL_PATH}")
 
 class CustomerFeatures(BaseModel):
     age: int
@@ -29,50 +40,49 @@ class CustomerFeatures(BaseModel):
     late_payment_count: int
 
 @app.get("/")
-def read_root():
-    return {"status": "online", "service": "SmartBank AI FastAPI Microservice"}
+def root():
+    return {"message": "SmartBank AI Decision Engine Aktif"}
+
+@app.get("/health")
+def health_check():
+    return {
+        "status": "UP",
+        "service": "SmartBank AI Engine",
+        "model_loaded": model is not None
+    }
 
 @app.post("/predict")
 def predict_offer(features: CustomerFeatures):
+    if model is None:
+        raise HTTPException(status_code=503, detail="Model yuklenemedi.")
+    
+    feature_order = [
+        'age', 'monthly_income', 'credit_score', 'debt_amount',
+        'account_balance', 'monthly_expense', 'transaction_count',
+        'avg_transaction_amount', 'late_payment_count'
+    ]
+    
+    input_df = pd.DataFrame([[
+        features.age,
+        features.monthly_income,
+        features.credit_score,
+        features.debt_amount,
+        features.account_balance,
+        features.monthly_expense,
+        features.transaction_count,
+        features.avg_transaction_amount,
+        features.late_payment_count
+    ]], columns=feature_order)
+    
     try:
-        # Veriyi DataFrame formatına getir
-        input_data = pd.DataFrame([{
-            'age': features.age,
-            'monthly_income': features.monthly_income,
-            'credit_score': features.credit_score,
-            'debt_amount': features.debt_amount,
-            'account_balance': features.account_balance,
-            'monthly_expense': features.monthly_expense,
-            'transaction_count': features.transaction_count,
-            'avg_transaction_amount': features.avg_transaction_amount,
-            'late_payment_count': features.late_payment_count
-        }])
-
-        if model is not None:
-            # Model üzerinden tahmin ve olasılık hesaplama
-            prediction = model.predict(input_data)[0]
-            probabilities = model.predict_proba(input_data)[0]
-            confidence = float(np.max(probabilities))
-        else:
-            # Yedek kural motoru (Fallback)
-            if features.late_payment_count > 2 or features.credit_score < 550:
-                prediction = "TEKLIF_YOK"
-                confidence = 0.95
-            elif features.credit_score >= 750 and features.account_balance > 100000:
-                prediction = "YATIRIM"
-                confidence = 0.88
-            elif features.credit_score >= 650 and features.monthly_income > 30000:
-                prediction = "KREDI"
-                confidence = 0.85
-            else:
-                prediction = "KREDI_KARTI"
-                confidence = 0.80
-
+        prediction = model.predict(input_df)[0]
+        probabilities = model.predict_proba(input_df)[0]
+        max_confidence = float(max(probabilities))
+        
         return {
-            "recommended_offer": prediction,
-            "confidence": round(confidence, 2),
-            "customer_id": None
+            "recommended_offer": str(prediction),
+            "confidence": round(max_confidence, 4),
+            "status": "SUCCESS"
         }
-
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Tahmin hatasi: {str(e)}")

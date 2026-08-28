@@ -1,63 +1,73 @@
 package SmartBankAI.controller;
 
+import SmartBankAI.dto.CustomerPageResponseDTO;
+import SmartBankAI.dto.CustomerResponseDTO;
+import SmartBankAI.dto.RecommendationDTO;
+import SmartBankAI.exception.ResourceNotFoundException;
 import SmartBankAI.model.customer;
 import SmartBankAI.model.PredictionResponse;
 import SmartBankAI.repository.customerRepository;
 import SmartBankAI.service.AiService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/customers")
 @CrossOrigin(origins = "*")
 public class customerController {
 
-    @Autowired
-    private customerRepository repository;
+    private final customerRepository customerRepo;
+    private final AiService aiService;
 
-    @Autowired
-    private AiService aiService;
+    public customerController(customerRepository customerRepo, AiService aiService) {
+        this.customerRepo = customerRepo;
+        this.aiService = aiService;
+    }
 
     @GetMapping
-    public List<customer> getAllCustomers() {
-        return repository.findAll();
+    public ResponseEntity<CustomerPageResponseDTO> getAllCustomers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "15") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("customerId").ascending());
+        Page<customer> customerPage = customerRepo.findAll(pageable);
+
+        List<CustomerResponseDTO> dtos = customerPage.getContent()
+                .stream()
+                .map(CustomerResponseDTO::new)
+                .collect(Collectors.toList());
+
+        CustomerPageResponseDTO response = new CustomerPageResponseDTO(
+                dtos,
+                customerPage.getNumber(),
+                customerPage.getTotalPages(),
+                customerPage.getTotalElements()
+        );
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getCustomerById(@PathVariable Long id) {
-        Optional<customer> cust = repository.findByCustomerId(id);
-        if (cust.isPresent()) {
-            return ResponseEntity.ok(cust.get());
-        }
-        Map<String, String> error = new HashMap<>();
-        error.put("error", "Müşteri bulunamadı");
-        error.put("customerId", id.toString());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    public ResponseEntity<CustomerResponseDTO> getCustomerById(@PathVariable Integer id) {
+        customer c = customerRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Müşteri bulunamadı ID: " + id));
+        return ResponseEntity.ok(new CustomerResponseDTO(c));
     }
 
     @GetMapping("/{id}/recommendation")
-    public ResponseEntity<?> getCustomerRecommendation(@PathVariable Long id) {
-        Optional<customer> custOpt = repository.findByCustomerId(id);
-        if (!custOpt.isPresent()) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Müşteri bulunamadı");
-            error.put("customerId", id.toString());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-        }
+    public ResponseEntity<RecommendationDTO> getCustomerRecommendation(@PathVariable Integer id) {
+        customer c = customerRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Müşteri bulunamadı ID: " + id));
 
-        customer c = custOpt.get();
-        PredictionResponse aiResponse = aiService.getPrediction(c);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("customer", c);
-        response.put("aiRecommendation", aiResponse);
+        PredictionResponse prediction = aiService.getPrediction(c);
+        RecommendationDTO response = new RecommendationDTO(new CustomerResponseDTO(c), prediction);
 
         return ResponseEntity.ok(response);
     }

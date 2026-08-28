@@ -1,0 +1,34 @@
+# Environment & Secrets
+.env
+*.env
+*.local
+
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+.mvn/
+mvnw
+mvnw.cmd
+
+# Python / Machine Learning
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+*.joblib
+model_metadata.json
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+*.swp
+.DS_Store
+
+# Logs
+*.log

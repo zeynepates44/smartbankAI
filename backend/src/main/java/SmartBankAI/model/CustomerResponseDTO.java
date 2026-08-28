@@ -1,7 +1,7 @@
 package SmartBankAI.model;
 
 public class CustomerResponseDTO {
-    private Long customerId;
+    private Integer customerId;
     private int age;
     private double monthlyIncome;
     private int creditScore;
@@ -27,8 +27,8 @@ public class CustomerResponseDTO {
         this.latePaymentCount = c.getLatePaymentCount();
     }
 
-    public Long getCustomerId() { return customerId; }
-    public void setCustomerId(Long customerId) { this.customerId = customerId; }
+    public Integer getCustomerId() { return customerId; }
+    public void setCustomerId(Integer customerId) { this.customerId = customerId; }
 
     public int getAge() { return age; }
     public void setAge(int age) { this.age = age; }
