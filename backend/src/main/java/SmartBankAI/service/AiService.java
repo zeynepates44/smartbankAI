@@ -1,11 +1,7 @@
 package SmartBankAI.service;
 
+import SmartBankAI.dto.RecommendationDTO;
 import SmartBankAI.model.customer;
-import SmartBankAI.model.PredictionResponse;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -17,76 +13,60 @@ import java.util.Map;
 public class AiService {
 
     private final RestTemplate restTemplate;
-    private final String FASTAPI_URL = "http://127.0.0.1:8000/predict";
+    private static final String FASTAPI_PREDICT_URL = "http://127.0.0.1:8000/predict";
 
     public AiService() {
-        // 1.5 saniye baglanti ve okuma zaman asimi
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(1500);
         factory.setReadTimeout(1500);
         this.restTemplate = new RestTemplate(factory);
     }
 
-    public PredictionResponse getPrediction(customer c) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        Map<String, Object> body = new HashMap<>();
-        body.put("age", c.getAge());
-        body.put("monthly_income", c.getMonthlyIncome() != null ? c.getMonthlyIncome().doubleValue() : 0.0);
-        body.put("credit_score", c.getCreditScore());
-        body.put("debt_amount", c.getDebtAmount() != null ? c.getDebtAmount().doubleValue() : 0.0);
-        body.put("account_balance", c.getAccountBalance() != null ? c.getAccountBalance().doubleValue() : 0.0);
-        body.put("monthly_expense", c.getMonthlyExpense() != null ? c.getMonthlyExpense().doubleValue() : 0.0);
-        body.put("transaction_count", c.getTransactionCount());
-        body.put("avg_transaction_amount", c.getAvgTransactionAmount() != null ? c.getAvgTransactionAmount().doubleValue() : 0.0);
-        body.put("late_payment_count", c.getLatePaymentCount());
-
-        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-
+    public RecommendationDTO getRecommendation(customer cust) {
         try {
-            ResponseEntity<PredictionResponse> response = restTemplate.postForEntity(
-                    FASTAPI_URL,
-                    requestEntity,
-                    PredictionResponse.class
-            );
+            Map<String, Object> request = new HashMap<>();
+            request.put("age", cust.getAge());
+            request.put("monthlyIncome", cust.getMonthlyIncome());
+            request.put("monthlyExpense", cust.getMonthlyExpense());
+            request.put("debtAmount", cust.getDebtAmount());
+            request.put("accountBalance", cust.getAccountBalance());
+            request.put("creditScore", cust.getCreditScore());
+            request.put("latePaymentCount", cust.getLatePaymentCount());
+            request.put("transactionCount", cust.getTransactionCount());
 
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                PredictionResponse result = response.getBody();
-                result.setIs_fallback(false);
-                return result;
+            Map<?, ?> response = restTemplate.postForObject(FASTAPI_PREDICT_URL, request, Map.class);
+
+            if (response != null && response.containsKey("recommended_offer")) {
+                String offer = (String) response.get("recommended_offer");
+                Number confNum = (Number) response.get("confidence");
+                Double confidence = confNum != null ? confNum.doubleValue() : 0.0;
+                String explanation = (String) response.get("explanation");
+
+                return new RecommendationDTO(offer, confidence, explanation, false);
             }
         } catch (Exception e) {
-            System.err.println("[!] FastAPI servisine erisilemedi/zaman asimi: " + e.getMessage() + " -> Fallback Rule Engine devreye giriyor.");
+            System.err.println("[AiService] FastAPI erisilemedi, Fallback Kural Motoru devreye girdi: " + e.getMessage());
         }
 
-        return getFallbackRuleRecommendation(c);
+        return fallbackRuleEngine(cust);
     }
 
-    private PredictionResponse getFallbackRuleRecommendation(customer c) {
-        PredictionResponse fallback = new PredictionResponse();
-        fallback.setIs_fallback(true);
-        fallback.setStatus("FALLBACK_SUCCESS");
+    private RecommendationDTO fallbackRuleEngine(customer cust) {
+        int creditScore = cust.getCreditScore() != null ? cust.getCreditScore() : 0;
+        double balance = cust.getAccountBalance() != null ? cust.getAccountBalance() : 0.0;
+        double income = cust.getMonthlyIncome() != null ? cust.getMonthlyIncome() : 0.0;
+        double debt = cust.getDebtAmount() != null ? cust.getDebtAmount() : 0.0;
+        int latePayment = cust.getLatePaymentCount() != null ? cust.getLatePaymentCount() : 0;
+        int txCount = cust.getTransactionCount() != null ? cust.getTransactionCount() : 0;
 
-        int latePayments = c.getLatePaymentCount() != null ? c.getLatePaymentCount() : 0;
-        int score = c.getCreditScore() != null ? c.getCreditScore() : 0;
-        double balance = c.getAccountBalance() != null ? c.getAccountBalance().doubleValue() : 0.0;
-        double income = c.getMonthlyIncome() != null ? c.getMonthlyIncome().doubleValue() : 0.0;
-
-        if (latePayments >= 3 || score < 520) {
-            fallback.setRecommended_offer("TEKLIF_YOK");
-            fallback.setConfidence(0.90);
-        } else if (score >= 720 && balance >= 60000) {
-            fallback.setRecommended_offer("YATIRIM");
-            fallback.setConfidence(0.88);
-        } else if (score >= 620 && income >= 35000) {
-            fallback.setRecommended_offer("KREDI");
-            fallback.setConfidence(0.85);
+        if (creditScore > 700 && balance > 100000) {
+            return new RecommendationDTO("YATIRIM", 0.85, "Yüksek bakiye ve güçlü kredi skoru nedeniyle yatırım portföyü önerildi (Fallback).", true);
+        } else if (creditScore > 600 && income > 25000 && debt < income * 4) {
+            return new RecommendationDTO("KREDI", 0.80, "Gelir/borç dengesi ve kredi skoru kredi tahsisine uygundur (Fallback).", true);
+        } else if (creditScore > 550 && txCount > 20 && latePayment <= 2) {
+            return new RecommendationDTO("KREDI_KARTI", 0.75, "İşlem hareketliliği kredi kartı teklifi için uygundur (Fallback).", true);
         } else {
-            fallback.setRecommended_offer("KREDI_KARTI");
-            fallback.setConfidence(0.80);
+            return new RecommendationDTO("TEKLIF_YOK", 0.90, "Mevcut risk kriterleri nedeniyle teklif oluşturulmadı (Fallback).", true);
         }
-
-        return fallback;
     }
 }

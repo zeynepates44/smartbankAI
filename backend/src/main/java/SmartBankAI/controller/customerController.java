@@ -5,7 +5,6 @@ import SmartBankAI.dto.CustomerResponseDTO;
 import SmartBankAI.dto.RecommendationDTO;
 import SmartBankAI.exception.ResourceNotFoundException;
 import SmartBankAI.model.customer;
-import SmartBankAI.model.PredictionResponse;
 import SmartBankAI.repository.customerRepository;
 import SmartBankAI.service.AiService;
 import org.springframework.data.domain.Page;
@@ -14,9 +13,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/customers")
@@ -34,21 +30,21 @@ public class customerController {
     @GetMapping
     public ResponseEntity<CustomerPageResponseDTO> getAllCustomers(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "15") int size
+            @RequestParam(defaultValue = "20") int size
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("customerId").ascending());
         Page<customer> customerPage = customerRepo.findAll(pageable);
 
-        List<CustomerResponseDTO> dtos = customerPage.getContent()
-                .stream()
-                .map(CustomerResponseDTO::new)
-                .collect(Collectors.toList());
+        var customerDTOs = customerPage.getContent().stream()
+                .map(this::mapToDTO)
+                .toList();
 
         CustomerPageResponseDTO response = new CustomerPageResponseDTO(
-                dtos,
+                customerDTOs,
                 customerPage.getNumber(),
                 customerPage.getTotalPages(),
-                customerPage.getTotalElements()
+                customerPage.getTotalElements(),
+                customerPage.isLast()
         );
 
         return ResponseEntity.ok(response);
@@ -56,19 +52,32 @@ public class customerController {
 
     @GetMapping("/{id}")
     public ResponseEntity<CustomerResponseDTO> getCustomerById(@PathVariable Integer id) {
-        customer c = customerRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Müşteri bulunamadı ID: " + id));
-        return ResponseEntity.ok(new CustomerResponseDTO(c));
+        customer foundCustomer = customerRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("ID: " + id + " numaralı müşteri bulunamadı."));
+
+        return ResponseEntity.ok(mapToDTO(foundCustomer));
     }
 
     @GetMapping("/{id}/recommendation")
-    public ResponseEntity<RecommendationDTO> getCustomerRecommendation(@PathVariable Integer id) {
-        customer c = customerRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Müşteri bulunamadı ID: " + id));
+    public ResponseEntity<RecommendationDTO> getRecommendation(@PathVariable Integer id) {
+        customer foundCustomer = customerRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("ID: " + id + " numaralı müşteri bulunamadı."));
 
-        PredictionResponse prediction = aiService.getPrediction(c);
-        RecommendationDTO response = new RecommendationDTO(new CustomerResponseDTO(c), prediction);
+        RecommendationDTO recommendation = aiService.getRecommendation(foundCustomer);
+        return ResponseEntity.ok(recommendation);
+    }
 
-        return ResponseEntity.ok(response);
+    private CustomerResponseDTO mapToDTO(customer entity) {
+        return new CustomerResponseDTO(
+                entity.getCustomerId(),
+                entity.getAge(),
+                entity.getMonthlyIncome(),
+                entity.getMonthlyExpense(),
+                entity.getDebtAmount(),
+                entity.getAccountBalance(),
+                entity.getCreditScore(),
+                entity.getLatePaymentCount(),
+                entity.getTransactionCount()
+        );
     }
 }

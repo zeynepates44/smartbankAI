@@ -1,20 +1,50 @@
 package SmartBankAI.dto;
 
-import SmartBankAI.model.PredictionResponse;
-
 public class RecommendationDTO {
-    private CustomerResponseDTO customer;
-    private PredictionResponse aiRecommendation;
+    private String recommendedOffer;
+    private Double confidence;
+    private String explanation;
+    private Boolean isFallback;
 
-    public RecommendationDTO() {}
-
-    public RecommendationDTO(CustomerResponseDTO customer, PredictionResponse aiRecommendation) {
-        this.customer = customer;
-        this.aiRecommendation = aiRecommendation;
+    public RecommendationDTO() {
     }
 
-    public CustomerResponseDTO getCustomer() { return customer; }
-    public void setCustomer(CustomerResponseDTO customer) { this.customer = customer; }
-    public PredictionResponse getAiRecommendation() { return aiRecommendation; }
-    public void setAiRecommendation(PredictionResponse aiRecommendation) { this.aiRecommendation = aiRecommendation; }
+    public RecommendationDTO(String recommendedOffer, Double confidence, String explanation, Boolean isFallback) {
+        this.recommendedOffer = recommendedOffer;
+        this.confidence = confidence;
+        this.explanation = explanation;
+        this.isFallback = isFallback;
+    }
+
+    public String getRecommendedOffer() {
+        return recommendedOffer;
+    }
+
+    public void setRecommendedOffer(String recommendedOffer) {
+        this.recommendedOffer = recommendedOffer;
+    }
+
+    public Double getConfidence() {
+        return confidence;
+    }
+
+    public void setConfidence(Double confidence) {
+        this.confidence = confidence;
+    }
+
+    public String getExplanation() {
+        return explanation;
+    }
+
+    public void setExplanation(String explanation) {
+        this.explanation = explanation;
+    }
+
+    public Boolean getIsFallback() {
+        return isFallback;
+    }
+
+    public void setIsFallback(Boolean isFallback) {
+        this.isFallback = isFallback;
+    }
 }

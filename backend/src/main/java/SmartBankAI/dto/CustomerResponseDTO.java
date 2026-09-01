@@ -1,68 +1,102 @@
 package SmartBankAI.dto;
 
-import SmartBankAI.model.customer;
-
 public class CustomerResponseDTO {
     private Integer customerId;
     private Integer age;
     private Double monthlyIncome;
-    private Integer creditScore;
+    private Double monthlyExpense;
     private Double debtAmount;
     private Double accountBalance;
-    private Double monthlyExpense;
-    private Integer transactionCount;
-    private Double avgTransactionAmount;
+    private Integer creditScore;
     private Integer latePaymentCount;
-    private String offerType;
+    private Integer transactionCount;
 
-    public CustomerResponseDTO() {}
-
-    public CustomerResponseDTO(customer c) {
-        if (c != null) {
-            this.customerId = c.getCustomerId();
-            this.age = c.getAge() != null ? ((Number) c.getAge()).intValue() : null;
-            this.monthlyIncome = c.getMonthlyIncome() != null ? ((Number) c.getMonthlyIncome()).doubleValue() : null;
-            this.creditScore = c.getCreditScore() != null ? ((Number) c.getCreditScore()).intValue() : null;
-            this.debtAmount = c.getDebtAmount() != null ? ((Number) c.getDebtAmount()).doubleValue() : null;
-            this.accountBalance = c.getAccountBalance() != null ? ((Number) c.getAccountBalance()).doubleValue() : null;
-            this.monthlyExpense = c.getMonthlyExpense() != null ? ((Number) c.getMonthlyExpense()).doubleValue() : null;
-            this.transactionCount = c.getTransactionCount() != null ? ((Number) c.getTransactionCount()).intValue() : null;
-            this.avgTransactionAmount = c.getAvgTransactionAmount() != null ? ((Number) c.getAvgTransactionAmount()).doubleValue() : null;
-            this.latePaymentCount = c.getLatePaymentCount() != null ? ((Number) c.getLatePaymentCount()).intValue() : null;
-            this.offerType = c.getOfferType();
-        }
+    public CustomerResponseDTO() {
     }
 
-    public Integer getCustomerId() { return customerId; }
-    public void setCustomerId(Integer customerId) { this.customerId = customerId; }
+    public CustomerResponseDTO(Integer customerId, Integer age, Double monthlyIncome, Double monthlyExpense,
+                               Double debtAmount, Double accountBalance, Integer creditScore,
+                               Integer latePaymentCount, Integer transactionCount) {
+        this.customerId = customerId;
+        this.age = age;
+        this.monthlyIncome = monthlyIncome;
+        this.monthlyExpense = monthlyExpense;
+        this.debtAmount = debtAmount;
+        this.accountBalance = accountBalance;
+        this.creditScore = creditScore;
+        this.latePaymentCount = latePaymentCount;
+        this.transactionCount = transactionCount;
+    }
 
-    public Integer getAge() { return age; }
-    public void setAge(Integer age) { this.age = age; }
+    public Integer getCustomerId() {
+        return customerId;
+    }
 
-    public Double getMonthlyIncome() { return monthlyIncome; }
-    public void setMonthlyIncome(Double monthlyIncome) { this.monthlyIncome = monthlyIncome; }
+    public void setCustomerId(Integer customerId) {
+        this.customerId = customerId;
+    }
 
-    public Integer getCreditScore() { return creditScore; }
-    public void setCreditScore(Integer creditScore) { this.creditScore = creditScore; }
+    public Integer getAge() {
+        return age;
+    }
 
-    public Double getDebtAmount() { return debtAmount; }
-    public void setDebtAmount(Double debtAmount) { this.debtAmount = debtAmount; }
+    public void setAge(Integer age) {
+        this.age = age;
+    }
 
-    public Double getAccountBalance() { return accountBalance; }
-    public void setAccountBalance(Double accountBalance) { this.accountBalance = accountBalance; }
+    public Double getMonthlyIncome() {
+        return monthlyIncome;
+    }
 
-    public Double getMonthlyExpense() { return monthlyExpense; }
-    public void setMonthlyExpense(Double monthlyExpense) { this.monthlyExpense = monthlyExpense; }
+    public void setMonthlyIncome(Double monthlyIncome) {
+        this.monthlyIncome = monthlyIncome;
+    }
 
-    public Integer getTransactionCount() { return transactionCount; }
-    public void setTransactionCount(Integer transactionCount) { this.transactionCount = transactionCount; }
+    public Double getMonthlyExpense() {
+        return monthlyExpense;
+    }
 
-    public Double getAvgTransactionAmount() { return avgTransactionAmount; }
-    public void setAvgTransactionAmount(Double avgTransactionAmount) { this.avgTransactionAmount = avgTransactionAmount; }
+    public void setMonthlyExpense(Double monthlyExpense) {
+        this.monthlyExpense = monthlyExpense;
+    }
 
-    public Integer getLatePaymentCount() { return latePaymentCount; }
-    public void setLatePaymentCount(Integer latePaymentCount) { this.latePaymentCount = latePaymentCount; }
+    public Double getDebtAmount() {
+        return debtAmount;
+    }
 
-    public String getOfferType() { return offerType; }
-    public void setOfferType(String offerType) { this.offerType = offerType; }
+    public void setDebtAmount(Double debtAmount) {
+        this.debtAmount = debtAmount;
+    }
+
+    public Double getAccountBalance() {
+        return accountBalance;
+    }
+
+    public void setAccountBalance(Double accountBalance) {
+        this.accountBalance = accountBalance;
+    }
+
+    public Integer getCreditScore() {
+        return creditScore;
+    }
+
+    public void setCreditScore(Integer creditScore) {
+        this.creditScore = creditScore;
+    }
+
+    public Integer getLatePaymentCount() {
+        return latePaymentCount;
+    }
+
+    public void setLatePaymentCount(Integer latePaymentCount) {
+        this.latePaymentCount = latePaymentCount;
+    }
+
+    public Integer getTransactionCount() {
+        return transactionCount;
+    }
+
+    public void setTransactionCount(Integer transactionCount) {
+        this.transactionCount = transactionCount;
+    }
 }
