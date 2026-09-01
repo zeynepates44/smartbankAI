@@ -1,0 +1,109 @@
+{
+    "model_name": "SmartBank-Customer-Decision-RF",
+    "model_version": "1.0.0",
+    "trained_at": "2026-09-01T09:55:17.348395Z",
+    "algorithm": "RandomForestClassifier",
+    "hyperparameters": {
+        "n_estimators": 100,
+        "max_depth": 10,
+        "random_state": 42
+    },
+    "features": [
+        "age",
+        "monthlyIncome",
+        "monthlyExpense",
+        "debtAmount",
+        "accountBalance",
+        "creditScore",
+        "latePaymentCount",
+        "transactionCount"
+    ],
+    "classes": [
+        "KREDI",
+        "KREDI_KARTI",
+        "TEKLIF_YOK",
+        "YATIRIM"
+    ],
+    "dataset_summary": {
+        "total_samples": 5000,
+        "train_samples": 4000,
+        "test_samples": 1000
+    },
+    "metrics": {
+        "accuracy": 0.996,
+        "f1_score_weighted": 0.996,
+        "classification_report": {
+            "KREDI": {
+                "precision": 1.0,
+                "recall": 0.9853658536585366,
+                "f1-score": 0.9926289926289926,
+                "support": 205.0
+            },
+            "KREDI_KARTI": {
+                "precision": 0.9620253164556962,
+                "recall": 0.987012987012987,
+                "f1-score": 0.9743589743589743,
+                "support": 77.0
+            },
+            "TEKLIF_YOK": {
+                "precision": 0.9979757085020243,
+                "recall": 1.0,
+                "f1-score": 0.9989868287740629,
+                "support": 493.0
+            },
+            "YATIRIM": {
+                "precision": 1.0,
+                "recall": 1.0,
+                "f1-score": 1.0,
+                "support": 225.0
+            },
+            "accuracy": 0.996,
+            "macro avg": {
+                "precision": 0.9900002562394301,
+                "recall": 0.9930947101678809,
+                "f1-score": 0.9914936989405074,
+                "support": 1000.0
+            },
+            "weighted avg": {
+                "precision": 0.9960779736585866,
+                "recall": 0.996,
+                "f1-score": 0.9960150911001974,
+                "support": 1000.0
+            }
+        },
+        "confusion_matrix": {
+            "labels": [
+                "KREDI",
+                "KREDI_KARTI",
+                "TEKLIF_YOK",
+                "YATIRIM"
+            ],
+            "matrix": [
+                [
+                    202,
+                    3,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    76,
+                    1,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    493,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    225
+                ]
+            ]
+        }
+    }
+}
