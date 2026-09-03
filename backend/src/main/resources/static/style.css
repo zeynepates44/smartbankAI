@@ -1,17 +1,19 @@
 body {
     font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: #f8fafc;
 }
 
-.glass-card {
-    background: rgba(255, 255, 255, 0.88);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+/* Seçili Satır Vurgusu */
+.selected-customer-row {
+    background-color: #e0f2fe !important;
+    font-weight: 600;
 }
 
-.dark .glass-card {
-    background: rgba(15, 23, 42, 0.88);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+/* Tablo Başlığı Sabitleme */
+.sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 2;
 }
 
 /* Özel Scrollbar */
@@ -26,6 +28,6 @@ body {
     background: #cbd5e1;
     border-radius: 4px;
 }
-.dark ::webkit-scrollbar-thumb {
-    background: #334155;
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }

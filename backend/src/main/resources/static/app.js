@@ -1,316 +1,404 @@
-let currentPage = 0;
-const pageSize = 20;
-let totalPages = 1;
-let totalItems = 0;
 let allCustomers = [];
+let filteredCustomers = [];
 let selectedCustomerId = null;
-let isLoading = false;
-let isSearchMode = false;
+let currentLang = "tr";
+let renderLimit = 30;
 
-document.addEventListener("DOMContentLoaded", () => {
-    initTheme();
-    loadCustomers(currentPage, true);
-    setupScrollListener();
-    renderIcons();
-});
+let lastAnalysisData = null;
 
-// 1. Tema Yönetimi
-function initTheme() {
-    const savedTheme = localStorage.getItem("theme") || "dark";
-    applyTheme(savedTheme);
-}
-
-function toggleTheme() {
-    const isDark = document.documentElement.classList.contains("dark");
-    const newTheme = isDark ? "light" : "dark";
-    applyTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-}
-
-function applyTheme(theme) {
-    const icon = document.getElementById("theme-icon");
-    if (theme === "dark") {
-        document.documentElement.classList.add("dark");
-        if (icon) icon.setAttribute("data-lucide", "sun");
-    } else {
-        document.documentElement.classList.remove("dark");
-        if (icon) icon.setAttribute("data-lucide", "moon");
+// --- DİL SÖZLÜĞÜ ---
+const dict = {
+    tr: {
+        portfolio: "Müşteri Portföyü",
+        searchPlaceholder: "İsim, meslek veya TC ile ara...",
+        colName: "Ad Soyad",
+        colJob: "Meslek",
+        colAction: "İşlem",
+        selectBtn: "Seç",
+        profileTitle: "Müşteri Finansal Profili",
+        income: "Aylık Gelir:",
+        expenses: "Aylık Gider:",
+        creditScore: "Kredi Skoru:",
+        balance: "Hesap Bakiyesi:",
+        debt: "Toplam Borç:",
+        credits: "Aktif Krediler:",
+        latePay: "Gecikmeli Ödeme:",
+        txCount: "Aylık İşlem Sayısı:",
+        products: "Mevcut Ürünler:",
+        runAiBtn: "AI Analizini Başlat (Risk & Teklif)",
+        analyzingBtn: "Analiz Ediliyor...",
+        welcomeHeader: "Karar Destek Motoru Hazır",
+        welcomeDesc: "Analiz gerçekleştirmek için sol taraftaki listeden bir müşteri seçip analizi başlatın.",
+        creditRisk: "KREDİ RİSKİ",
+        fraudRisk: "FRAUD RİSKİ",
+        churnRisk: "CHURN RİSKİ",
+        recProductHeader: "Kişiselleştirilmiş Ürün Teklifi",
+        recScoreLabel: "Uygunluk Skoru",
+        xaiHeader: "Neden Bu Teklif Önerildi? (Açıklanabilirlik)",
+        summaryHeader: "Yapay Zeka Karar Özeti:",
+        staffLogin: "Personel Girişi",
+        modalTitle: "Personel Giriş Portalı",
+        modalDesc: "Sisteme personel kimliği ile devam edebilirsiniz (İsteğe bağlıdır).",
+        lblStaffId: "Personel ID / Sicil No",
+        lblPassword: "Şifre",
+        lblRole: "Departman / Meslek",
+        roleCredit: "Kredi Tahsis Uzmanı",
+        roleRisk: "Risk Analisti",
+        roleManager: "Şube Müdürü",
+        roleRep: "Müşteri Temsilcisi",
+        btnClose: "Kapat",
+        btnLogin: "Giriş Yap",
+        noJob: "Meslek Belirtilmedi",
+        none: "Yok",
+        noResult: "Kayıt bulunamadı."
+    },
+    en: {
+        portfolio: "Customer Portfolio",
+        searchPlaceholder: "Search by name, job or ID...",
+        colName: "Full Name",
+        colJob: "Occupation",
+        colAction: "Action",
+        selectBtn: "Select",
+        profileTitle: "Customer Financial Profile",
+        income: "Monthly Income:",
+        expenses: "Monthly Expenses:",
+        creditScore: "Credit Score:",
+        balance: "Account Balance:",
+        debt: "Total Debt:",
+        credits: "Active Credits:",
+        latePay: "Late Payments:",
+        txCount: "Monthly Transactions:",
+        products: "Existing Products:",
+        runAiBtn: "Run AI Analysis (Risk & Offer)",
+        analyzingBtn: "Analyzing...",
+        welcomeHeader: "Decision Engine Ready",
+        welcomeDesc: "Select a customer from the left list to initiate real-time analysis.",
+        creditRisk: "CREDIT RISK",
+        fraudRisk: "FRAUD RISK",
+        churnRisk: "CHURN RISK",
+        recProductHeader: "Personalized Product Offer",
+        recScoreLabel: "Fit Score",
+        xaiHeader: "Why Was This Offer Recommended? (Explainability)",
+        summaryHeader: "AI Decision Summary:",
+        staffLogin: "Staff Login",
+        modalTitle: "Staff Access Portal",
+        modalDesc: "You may authenticate with your staff credentials (Optional).",
+        lblStaffId: "Staff ID / Badge No",
+        lblPassword: "Password",
+        lblRole: "Department / Role",
+        roleCredit: "Credit Underwriter",
+        roleRisk: "Risk Analyst",
+        roleManager: "Branch Manager",
+        roleRep: "Customer Representative",
+        btnClose: "Close",
+        btnLogin: "Sign In",
+        noJob: "Not Specified",
+        none: "None",
+        noResult: "No records found."
     }
-    renderIcons();
+};
+
+// Meslek Çevirileri
+const occupationMap = {
+    "Mimar": "Architect",
+    "Bankaci": "Banker",
+    "Muhasebeci": "Accountant",
+    "Ogretmen": "Teacher",
+    "Avukat": "Lawyer",
+    "Doktor": "Doctor",
+    "Hemsire": "Nurse",
+    "Muhendis": "Engineer",
+    "Yazilim Muhendisi": "Software Engineer",
+    "Esnaf": "Tradesman",
+    "Pazarlamaci": "Marketer",
+    "Emekli": "Retired",
+    "Ogrenci": "Student"
+};
+
+// Tekil Ürün Çevirileri
+const singleProductMap = {
+    "Vadesiz TL": "Demand Deposit Account",
+    "Ek Hesap": "Overdraft Account",
+    "Kredi Karti": "Credit Card",
+    "Yuksek Getirili Vadeli Mevduat": "High-Yield Time Deposit",
+    "Bireysel Emeklilik Sistemi (BES)": "Personal Pension Scheme (PPS)",
+    "Ihtiyac Kredisi": "Consumer Loan",
+    "Konut Kredisi": "Mortgage Loan",
+    "Tasit Kredisi": "Vehicle Loan",
+    "Platinum / Gold Kredi Karti": "Platinum / Gold Credit Card",
+    "Kredi Karti Limit Artisi": "Credit Card Limit Increase",
+    "Yatirim Fonu": "Mutual Investment Fund"
+};
+
+// XAI Gerekçe Cümleleri Çevirileri
+const reasonMap = {
+    "yuksek gelir ve yuksek kredi guvenirligi": "High income and high creditworthiness.",
+    "yuksek gelir ve yuksek kredi guvenilirligi": "High income and high creditworthiness.",
+    "gecmis donemde 3 adet gecikmeli odeme kaydi bulundu": "3 late payment records were detected in previous periods.",
+    "vadesiz hesapta atil duran yuksek nakit bakiyesi": "High idle cash balance detected in checking account.",
+    "uzun vadeli birikim ve vergi avantaji profiline uygunluk": "Suitable for long-term savings and tax advantage profile.",
+    "kredi karti limit kullanim orani kritik esigin uzerinde": "Credit card limit utilization rate is above critical threshold (90%+).",
+    "yuksek kredi skoru ve duzenli geri odeme gecmisi": "High credit score and consistent repayment history."
+};
+
+function translateOccupation(val) {
+    if (!val) return dict[currentLang].noJob;
+    return currentLang === "en" ? (occupationMap[val] || val) : val;
 }
 
-// 2. Personel Giriş Modalı
-function toggleLoginModal(show) {
-    const modal = document.getElementById("login-modal");
-    if (modal) {
-        if (show) modal.classList.remove("hidden");
-        else modal.classList.add("hidden");
-    }
-    renderIcons();
+function translateProductsString(productsStr) {
+    if (!productsStr) return dict[currentLang].none;
+    if (currentLang === "tr") return productsStr;
+
+    const items = productsStr.split(',').map(item => item.trim());
+    const translatedItems = items.map(item => singleProductMap[item] || item);
+    return translatedItems.join(', ');
 }
 
-function handleLogin(event) {
-    event.preventDefault();
-    toggleLoginModal(false);
-    showToast("Personel girişi başarılı! Hoş geldiniz.", "success");
-}
-
-// 3. API'den Veri Çekme (Sayfa Ekleme / Sonsuz Kaydırma)
-async function loadCustomers(page = 0, isInitial = false) {
-    if (isLoading) return;
-    if (!isInitial && page >= totalPages) return;
-
-    isLoading = true;
-    updateScrollStatus(true);
-
-    try {
-        const response = await fetch(`/api/customers?page=${page}&size=${pageSize}`);
-        if (!response.ok) throw new Error("Veri çekilemedi (" + response.status + ")");
-
-        const data = await response.json();
-        currentPage = data.currentPage;
-        totalPages = data.totalPages;
-        totalItems = data.totalItems;
-
-        if (isInitial) {
-            allCustomers = data.customers || [];
-        } else {
-            allCustomers = [...allCustomers, ...(data.customers || [])];
+function translateReason(val) {
+    if (!val || currentLang === "tr") return val;
+    const cleanStr = val.toLowerCase().replace(/[.\n\r]/g, '').trim();
+    for (let key in reasonMap) {
+        if (cleanStr.includes(key)) {
+            return reasonMap[key];
         }
-
-        renderTable(allCustomers);
-        updateCountSummary();
-    } catch (error) {
-        console.error("Yükleme hatası:", error);
-        showToast(error.message, "error");
-    } finally {
-        isLoading = false;
-        updateScrollStatus(false);
     }
+    return val;
 }
 
-// 4. Tabloyu Doldurma
-function renderTable(customers) {
-    const tableBody = document.getElementById("customer-table-body");
-    if (!tableBody) return;
+// --- DOM HAZIR OLDUĞUNDA ---
+document.addEventListener("DOMContentLoaded", () => {
+    loadCustomers();
+    document.getElementById("btnAnalyze").addEventListener("click", runAnalysis);
 
-    if (!customers || customers.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">Sonuç bulunamadı.</td></tr>`;
-        return;
-    }
+    // Müşteri Arama
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+        const q = e.target.value.toLowerCase().trim();
+        filteredCustomers = allCustomers.filter(cust =>
+            (cust.fullName && cust.fullName.toLowerCase().includes(q)) ||
+            (cust.occupation && cust.occupation.toLowerCase().includes(q)) ||
+            (cust.identityNumber && cust.identityNumber.includes(q)) ||
+            (cust.id && cust.id.toString() === q)
+        );
+        renderLimit = 30;
+        document.getElementById("custCountBadge").innerText = filteredCustomers.length;
+        renderCustomerRows();
+    });
 
-    tableBody.innerHTML = customers.map(c => {
-        const isSelected = selectedCustomerId === c.customerId;
-        const rowClass = isSelected
-            ? "bg-cyan-500/10 dark:bg-cyan-500/20 font-semibold"
-            : "hover:bg-slate-100/60 dark:hover:bg-slate-800/50";
-
-        return `
-            <tr class="transition cursor-pointer ${rowClass}" onclick="selectCustomer(${c.customerId})">
-                <td class="p-3 font-bold text-slate-900 dark:text-slate-100">#${c.customerId}</td>
-                <td class="p-3">${c.age || '-'}</td>
-                <td class="p-3">${formatCurrency(c.monthlyIncome)}</td>
-                <td class="p-3">
-                    <span class="px-2 py-0.5 rounded text-[11px] font-bold ${getScoreBadge(c.creditScore)}">
-                        ${c.creditScore || '-'}
-                    </span>
-                </td>
-                <td class="p-3 text-emerald-600 dark:text-emerald-400 font-medium">${formatCurrency(c.accountBalance)}</td>
-                <td class="p-3 text-right">
-                    <button onclick="event.stopPropagation(); selectCustomer(${c.customerId})" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-cyan-600/10 hover:bg-cyan-600/20 text-cyan-600 dark:text-cyan-400 transition">
-                        Seç & Analiz Et
-                    </button>
-                </td>
-            </tr>
-        `;
-    }).join("");
-}
-
-// 5. Sonsuz Kaydırma Dinleyicisi
-function setupScrollListener() {
-    const scrollContainer = document.querySelector(".custom-scrollbar");
-    if (!scrollContainer) return;
-
-    scrollContainer.addEventListener("scroll", () => {
-        if (isSearchMode) return; // Arama yapılıyorken sonsuz kaydırmayı durdur
-
-        const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
-        // Tablonun altına 60px kala yeni sayfayı çek
-        if (scrollTop + clientHeight >= scrollHeight - 60) {
-            if (!isLoading && currentPage + 1 < totalPages) {
-                loadCustomers(currentPage + 1, false);
+    // Kutu içi aşağı kaydırma (Infinite Scroll)
+    const scrollBox = document.getElementById("tableScrollArea");
+    scrollBox.addEventListener("scroll", () => {
+        if (scrollBox.scrollTop + scrollBox.clientHeight >= scrollBox.scrollHeight - 30) {
+            if (renderLimit < filteredCustomers.length) {
+                renderLimit += 30;
+                renderCustomerRows();
             }
         }
     });
+
+    // Dil Seçeneği Butonu
+    document.getElementById("btnLanguage").addEventListener("click", () => {
+        currentLang = currentLang === "tr" ? "en" : "tr";
+        document.getElementById("langText").innerText = currentLang === "tr" ? "EN" : "TR";
+
+        applyTranslations();
+        renderCustomerRows();
+
+        if (selectedCustomerId) {
+            selectCustomer(selectedCustomerId, false);
+        }
+
+        if (lastAnalysisData) {
+            renderAnalysisData(lastAnalysisData);
+        }
+    });
+
+    // Personel Girişi
+    document.getElementById("btnLoginSave").addEventListener("click", () => {
+        const idVal = document.getElementById("staffIdInput").value.trim();
+        const roleVal = document.getElementById("staffRoleSelect").value;
+        if (idVal) {
+            document.getElementById("staffLabel").innerText = `${idVal} (${roleVal})`;
+        }
+        const modalEl = document.getElementById("staffModal");
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    });
+});
+
+// --- MÜŞTERİLERİ YÜKLE ---
+async function loadCustomers() {
+    try {
+        const res = await fetch("/api/customers");
+        allCustomers = await res.json();
+        filteredCustomers = [...allCustomers];
+        document.getElementById("custCountBadge").innerText = allCustomers.length;
+        renderCustomerRows();
+    } catch (err) {
+        console.error("Müşteri listesi alınamadı:", err);
+        document.getElementById("customerTableBody").innerHTML = `<tr><td colspan="4" class="text-danger py-3">Müşteriler yüklenemedi.</td></tr>`;
+    }
 }
 
-// 6. Doğrudan Backend Destekli ID Arama
-let searchTimeout = null;
-async function filterCustomers() {
-    const input = document.getElementById("search-input");
-    if (!input) return;
-    const query = input.value.trim();
+// --- TABLO ÇİZİMİ ---
+function renderCustomerRows() {
+    const tbody = document.getElementById("customerTableBody");
+    tbody.innerHTML = "";
+    const t = dict[currentLang];
 
-    clearTimeout(searchTimeout);
-
-    if (!query) {
-        isSearchMode = false;
-        renderTable(allCustomers);
-        updateCountSummary();
+    if (filteredCustomers.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-muted py-3">${t.noResult}</td></tr>`;
         return;
     }
 
-    // Kullanıcı yazmayı bitirdikten 250ms sonra ara
-    searchTimeout = setTimeout(async () => {
-        isSearchMode = true;
+    const items = filteredCustomers.slice(0, renderLimit);
+    const fragment = document.createDocumentFragment();
 
-        // Önce bellekteki yüklü müşterilere bak
-        const localMatches = allCustomers.filter(c => c.customerId.toString().includes(query));
-        if (localMatches.length > 0) {
-            renderTable(localMatches);
-            const countEl = document.getElementById("loaded-count");
-            if (countEl) countEl.innerText = `${localMatches.length} Eşleşen Müşteri`;
-            return;
+    items.forEach(cust => {
+        const tr = document.createElement("tr");
+        if (cust.id === selectedCustomerId) {
+            tr.classList.add("selected-customer-row");
         }
+        tr.innerHTML = `
+            <td>${cust.id}</td>
+            <td class="fw-semibold">${cust.fullName}</td>
+            <td>${translateOccupation(cust.occupation)}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="selectCustomer(${cust.id})">
+                    ${t.selectBtn}
+                </button>
+            </td>
+        `;
+        fragment.appendChild(tr);
+    });
 
-        // Bellekte yoksa doğrudan backend'den ID ile çek
-        if (!isNaN(query)) {
-            try {
-                const res = await fetch(`/api/customers/${query}`);
-                if (res.ok) {
-                    const cust = await res.json();
-                    renderTable([cust]);
-                    const countEl = document.getElementById("loaded-count");
-                    if (countEl) countEl.innerText = `1 Eşleşen Müşteri`;
-                    return;
-                }
-            } catch (e) {
-                // Bulunamadıysa aşağıda boş liste basacak
-            }
-        }
-
-        renderTable([]);
-        const countEl = document.getElementById("loaded-count");
-        if (countEl) countEl.innerText = `0 Eşleşen Müşteri`;
-    }, 250);
+    tbody.appendChild(fragment);
 }
 
-// 7. Müşteri Seçimi ve Sağ Panel AI Analizi
-async function selectCustomer(id) {
-    selectedCustomerId = id;
-    renderTable(isSearchMode ? [allCustomers.find(c => c.customerId === id) || { customerId: id }] : allCustomers);
+// --- MÜŞTERİ SEÇİMİ ---
+async function selectCustomer(id, resetView = true) {
+    try {
+        const res = await fetch(`/api/customers/${id}`);
+        const cust = await res.json();
+        selectedCustomerId = cust.id;
 
-    const loader = document.getElementById("ai-loader");
-    if (loader) loader.classList.remove("hidden");
+        renderCustomerRows();
+
+        const t = dict[currentLang];
+        document.getElementById("custIdentity").innerText = cust.identityNumber;
+        document.getElementById("custFullName").innerText = `${cust.fullName} (${cust.age}, ${translateOccupation(cust.occupation)})`;
+        document.getElementById("custIncome").innerText = Number(cust.monthlyIncome).toLocaleString('tr-TR');
+        document.getElementById("custExpenses").innerText = Number(cust.monthlyExpenses).toLocaleString('tr-TR');
+        document.getElementById("custCreditScore").innerText = cust.creditScore;
+        document.getElementById("custBalance").innerText = Number(cust.accountBalance).toLocaleString('tr-TR');
+        document.getElementById("custDebt").innerText = Number(cust.totalDebt).toLocaleString('tr-TR');
+        document.getElementById("custCreditsCount").innerText = cust.activeCreditsCount || 0;
+        document.getElementById("custLatePayments").innerText = cust.latePaymentsCount || 0;
+        document.getElementById("custTransactions").innerText = cust.monthlyTransactionCount || 0;
+        document.getElementById("custProducts").innerText = translateProductsString(cust.existingProducts);
+
+        document.getElementById("customerDetailCard").style.display = "block";
+
+        if (resetView) {
+            document.getElementById("welcomePlaceholder").style.display = "block";
+            document.getElementById("analysisResultArea").style.display = "none";
+            lastAnalysisData = null;
+        }
+    } catch (err) {
+        console.error("Müşteri detayı alınamadı:", err);
+    }
+}
+
+// --- AI ANALİZİ ÇALIŞTIR ---
+async function runAnalysis() {
+    if (!selectedCustomerId) return;
+
+    const t = dict[currentLang];
+    const btn = document.getElementById("btnAnalyze");
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>${t.analyzingBtn}`;
 
     try {
-        const res = await fetch(`/api/customers/${id}/recommendation`);
-        if (!res.ok) {
-            const errJson = await res.json();
-            throw new Error(errJson.message || "AI servisi yanıt vermedi.");
-        }
-
+        const res = await fetch(`/api/customers/${selectedCustomerId}/analyze`, {
+            method: "POST"
+        });
         const data = await res.json();
-        updateRightPanel(data);
+        lastAnalysisData = data;
+
+        renderAnalysisData(data);
+
+        document.getElementById("welcomePlaceholder").style.display = "none";
+        document.getElementById("analysisResultArea").style.display = "block";
+
     } catch (err) {
-        console.error("AI Hatası:", err);
-        showToast(err.message, "error");
+        alert("AI Analizi sırasında hata oluştu. FastAPI servisinin açık olduğundan emin olun.");
+        console.error(err);
     } finally {
-        if (loader) loader.classList.add("hidden");
+        btn.disabled = false;
+        btn.innerHTML = `<i class="bi bi-cpu me-2"></i><span data-i18n="runAiBtn">${t.runAiBtn}</span>`;
     }
 }
 
-// 8. Sağ Paneli Güncelleme
-function updateRightPanel(data) {
-    const cust = data.customer || {};
-    const ai = data.aiRecommendation || {};
+// --- ANALİZ VERİLERİNİ EKRANA BAS (OKLAR VE DİL DESTEĞİ) ---
+function renderAnalysisData(data) {
+    updateRiskCard("creditRisk", data.creditRisk);
+    updateRiskCard("fraudRisk", data.fraudRisk);
+    updateRiskCard("churnRisk", data.churnRisk);
 
-    setText("panel-customer-id", `Müşteri #${cust.customerId}`);
-    setText("panel-customer-age", `Yaş: ${cust.age || '-'}`);
-    setText("panel-offer", formatOffer(ai.recommended_offer));
+    // 1. Önerilen Ürün
+    document.getElementById("recProductTitle").innerText = translateProductsString(data.recommendedProduct);
+    document.getElementById("recProductScore").innerText = `%${data.recommendationScore}`;
 
-    const confPct = Math.round((ai.confidence || 0) * 100);
-    setText("panel-confidence", `%${confPct}`);
+    // 2. Karar Gerekçeleri (İngilizceye Çevrilir)
+    const reasonsList = document.getElementById("reasonsList");
+    reasonsList.innerHTML = "";
+    data.explanationReasons.forEach(reason => {
+        const li = document.createElement("li");
+        li.className = "list-group-item px-0 text-secondary bg-transparent";
+        li.innerHTML = `<i class="bi bi-check2-circle text-success me-2"></i>${translateReason(reason)}`;
+        reasonsList.appendChild(li);
+    });
 
-    const progressBar = document.getElementById("panel-progress");
-    if (progressBar) progressBar.style.width = `${confPct}%`;
-
-    const tag = document.getElementById("panel-tag");
-    if (tag) {
-        if (ai.is_fallback) {
-            tag.innerText = "KURAL MOTORU (FALLBACK)";
-            tag.className = "text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/30";
-        } else {
-            tag.innerText = "CANLI ML TAHMİNİ";
-            tag.className = "text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/30";
-        }
-    }
-
-    setText("panel-income-expense", `${formatCurrency(cust.monthlyIncome)} / ${formatCurrency(cust.monthlyExpense)}`);
-    setText("panel-debt", formatCurrency(cust.debtAmount));
-    setText("panel-balance", formatCurrency(cust.accountBalance));
-    setText("panel-late-payment", `${cust.latePaymentCount || 0} Adet`);
-}
-
-// Durum Yardımcıları
-function updateScrollStatus(loading) {
-    const status = document.getElementById("scroll-status");
-    if (!status) return;
-    status.innerText = loading ? "Daha fazla müşteri yükleniyor..." : "Aşağı kaydırdıkça yeni müşteriler yüklenir";
-}
-
-function updateCountSummary() {
-    const countEl = document.getElementById("loaded-count");
-    if (countEl) {
-        countEl.innerText = `${allCustomers.length} / ${totalItems} Müşteri Yüklendi`;
+    // 3. Doğal Dil Karar Özeti
+    const summaryEl = document.getElementById("naturalLanguageSummary");
+    if (currentLang === "en") {
+        const fullName = document.getElementById("custFullName").innerText.split('(')[0].trim();
+        const engProduct = translateProductsString(data.recommendedProduct);
+        summaryEl.innerText = `In the analysis conducted for customer ${fullName}; Credit Risk was identified as %${data.creditRisk.probability} (${data.creditRisk.level}), Fraud Risk as %${data.fraudRisk.probability} (${data.fraudRisk.level}), and Churn Risk as %${data.churnRisk.probability} (${data.churnRisk.level}). In accordance with the customer's financial indicators, the most suitable offer is '${engProduct}' with a fit score of %${data.recommendationScore}.`;
+    } else {
+        summaryEl.innerText = data.aiNaturalLanguageSummary;
     }
 }
 
-function showToast(message, type = "info") {
-    const container = document.getElementById("toast-container");
-    if (!container) return;
+// --- RİSK ROZETLERİ (OK İŞARETLERİ VE SEVİYELER) ---
+function updateRiskCard(prefix, riskObj) {
+    document.getElementById(`${prefix}Prob`).innerText = `%${riskObj.probability}`;
+    const badge = document.getElementById(`${prefix}Badge`);
 
-    const toast = document.createElement("div");
-    const bgClass = type === "error" ? "bg-rose-500 text-white" : "bg-emerald-600 text-white";
-    toast.className = `px-4 py-3 rounded-xl shadow-xl text-xs font-semibold flex items-center gap-2 transition-all transform duration-300 ${bgClass}`;
-    toast.innerHTML = `<span>${message}</span>`;
+    const lvl = (riskObj.level || "").toUpperCase();
+    let displayText = "";
 
-    container.appendChild(toast);
-    setTimeout(() => {
-        toast.style.opacity = "0";
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
-
-function setText(id, text) {
-    const el = document.getElementById(id);
-    if (el) el.innerText = text;
-}
-
-function formatCurrency(val) {
-    if (val == null) return "0 ₺";
-    return new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", maximumFractionDigits: 0 }).format(val);
-}
-
-function getScoreBadge(score) {
-    if (!score) return "bg-slate-200 dark:bg-slate-800 text-slate-400";
-    if (score >= 700) return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20";
-    if (score >= 600) return "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20";
-    if (score >= 500) return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20";
-    return "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20";
-}
-
-function formatOffer(offer) {
-    if (!offer) return "-";
-    switch (offer) {
-        case "KREDI": return "İhtiyaç Kredisi Teklifi";
-        case "KREDI_KARTI": return "Özel Kredi Kartı Teklifi";
-        case "YATIRIM": return "Yatırım & Portföy Teklifi";
-        case "TEKLIF_YOK": return "Şu An Teklif Yok";
-        default: return offer.replace("_", " ");
+    if (lvl === "HIGH") {
+        displayText = currentLang === "tr" ? "▲ YÜKSEK" : "▲ HIGH";
+    } else if (lvl === "MEDIUM") {
+        displayText = currentLang === "tr" ? "► ORTA" : "► MEDIUM";
+    } else {
+        displayText = currentLang === "tr" ? "▼ DÜŞÜK" : "▼ LOW";
     }
+
+    badge.innerText = displayText;
+    badge.className = `badge bg-${riskObj.statusColor} px-2 py-1`;
 }
 
-function renderIcons() {
-    if (window.lucide) window.lucide.createIcons();
+// --- STATİK METİNLERİ ÇEVİR ---
+function applyTranslations() {
+    const t = dict[currentLang];
+    document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        if (t[key]) el.innerText = t[key];
+    });
+    document.querySelectorAll("[data-i18n-ph]").forEach(el => {
+        const key = el.getAttribute("data-i18n-ph");
+        if (t[key]) el.placeholder = t[key];
+    });
 }

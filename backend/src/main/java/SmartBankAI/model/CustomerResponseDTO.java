@@ -1,59 +1,55 @@
 package SmartBankAI.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class CustomerResponseDTO {
-    private Integer customerId;
-    private int age;
-    private double monthlyIncome;
-    private int creditScore;
-    private double debtAmount;
-    private double accountBalance;
-    private double monthlyExpense;
-    private int transactionCount;
-    private double avgTransactionAmount;
-    private int latePaymentCount;
 
-    public CustomerResponseDTO() {}
+    private Long id;
+    private String fullName;
+    private String identityNumber;
+    private Integer age;
+    private String occupation;
+    private BigDecimal monthlyIncome;
+    private BigDecimal monthlyExpenses;
+    private Integer creditScore;
+    private BigDecimal accountBalance;
+    private BigDecimal totalDebt;
+    private Integer activeCreditsCount;
+    private Integer latePaymentsCount;
+    private Integer monthlyTransactionCount;
+    private Double creditCardUsageRatio;
+    private Integer mobileAppLoginsPerMonth;
+    private String existingProducts;
 
-    public CustomerResponseDTO(customer c) {
-        this.customerId = c.getCustomerId();
-        this.age = c.getAge();
-        this.monthlyIncome = c.getMonthlyIncome();
-        this.creditScore = c.getCreditScore();
-        this.debtAmount = c.getDebtAmount();
-        this.accountBalance = c.getAccountBalance();
-        this.monthlyExpense = c.getMonthlyExpense();
-        this.transactionCount = c.getTransactionCount();
-        this.avgTransactionAmount = c.getAvgTransactionAmount();
-        this.latePaymentCount = c.getLatePaymentCount();
+    public static CustomerResponseDTO fromEntity(customer c) {
+        if (c == null) return null;
+
+        return CustomerResponseDTO.builder()
+                .id(c.getId())
+                .fullName(c.getFullName())
+                .identityNumber(c.getIdentityNumber())
+                .age(c.getAge())
+                .occupation(c.getOccupation())
+                .monthlyIncome(c.getMonthlyIncome())
+                .monthlyExpenses(c.getMonthlyExpenses())
+                .creditScore(c.getCreditScore())
+                .accountBalance(c.getAccountBalance())
+                .totalDebt(c.getTotalDebt())
+                .activeCreditsCount(c.getActiveCreditsCount())
+                .latePaymentsCount(c.getLatePaymentsCount())
+                .monthlyTransactionCount(c.getMonthlyTransactionCount())
+                .creditCardUsageRatio(c.getCreditCardUsageRatio())
+                .mobileAppLoginsPerMonth(c.getMobileAppLoginsPerMonth())
+                .existingProducts(c.getExistingProducts())
+                .build();
     }
-
-    public Integer getCustomerId() { return customerId; }
-    public void setCustomerId(Integer customerId) { this.customerId = customerId; }
-
-    public int getAge() { return age; }
-    public void setAge(int age) { this.age = age; }
-
-    public double getMonthlyIncome() { return monthlyIncome; }
-    public void setMonthlyIncome(double monthlyIncome) { this.monthlyIncome = monthlyIncome; }
-
-    public int getCreditScore() { return creditScore; }
-    public void setCreditScore(int creditScore) { this.creditScore = creditScore; }
-
-    public double getDebtAmount() { return debtAmount; }
-    public void setDebtAmount(double debtAmount) { this.debtAmount = debtAmount; }
-
-    public double getAccountBalance() { return accountBalance; }
-    public void setAccountBalance(double accountBalance) { this.accountBalance = accountBalance; }
-
-    public double getMonthlyExpense() { return monthlyExpense; }
-    public void setMonthlyExpense(double monthlyExpense) { this.monthlyExpense = monthlyExpense; }
-
-    public int getTransactionCount() { return transactionCount; }
-    public void setTransactionCount(int transactionCount) { this.transactionCount = transactionCount; }
-
-    public double getAvgTransactionAmount() { return avgTransactionAmount; }
-    public void setAvgTransactionAmount(double avgTransactionAmount) { this.avgTransactionAmount = avgTransactionAmount; }
-
-    public int getLatePaymentCount() { return latePaymentCount; }
-    public void setLatePaymentCount(int latePaymentCount) { this.latePaymentCount = latePaymentCount; }
 }

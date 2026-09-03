@@ -1,134 +1,60 @@
 package SmartBankAI.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.math.BigDecimal;
 
 @Entity
-@Table(name = "customers", schema = "dbo")
+@Table(name = "customers")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class customer {
 
     @Id
-    @Column(name = "customer_id")
-    private Integer customerId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @Column(name = "age")
+    @Column(nullable = false, length = 100)
+    private String fullName;
+
+    @Column(nullable = false, unique = true, length = 20)
+    private String identityNumber;
+
     private Integer age;
 
-    @Column(name = "monthly_income")
-    private Double monthlyIncome;
+    @Column(length = 50)
+    private String occupation;
 
-    @Column(name = "credit_score")
+    @Column(precision = 15, scale = 2)
+    private BigDecimal monthlyIncome;
+
+    @Column(precision = 15, scale = 2)
+    private BigDecimal monthlyExpenses;
+
     private Integer creditScore;
 
-    @Column(name = "debt_amount")
-    private Double debtAmount;
+    @Column(precision = 15, scale = 2)
+    private BigDecimal accountBalance;
 
-    @Column(name = "account_balance")
-    private Double accountBalance;
+    @Column(precision = 15, scale = 2)
+    private BigDecimal totalDebt;
 
-    @Column(name = "monthly_expense")
-    private Double monthlyExpense;
+    private Integer activeCreditsCount;
 
-    @Column(name = "transaction_count")
-    private Integer transactionCount;
+    private Integer latePaymentsCount;
 
-    @Column(name = "avg_transaction_amount")
-    private Double avgTransactionAmount;
+    // Davranissal ve Islemsel Veriler
+    private Integer monthlyTransactionCount;
 
-    @Column(name = "late_payment_count")
-    private Integer latePaymentCount;
+    @Column
+    private Double creditCardUsageRatio;
 
-    @Column(name = "offer_type")
-    private String offerType;
+    private Integer mobileAppLoginsPerMonth;
 
-    public customer() {
-    }
-
-    public Integer getCustomerId() {
-        return customerId;
-    }
-
-    public void setCustomerId(Integer customerId) {
-        this.customerId = customerId;
-    }
-
-    public Integer getAge() {
-        return age;
-    }
-
-    public void setAge(Integer age) {
-        this.age = age;
-    }
-
-    public Double getMonthlyIncome() {
-        return monthlyIncome;
-    }
-
-    public void setMonthlyIncome(Double monthlyIncome) {
-        this.monthlyIncome = monthlyIncome;
-    }
-
-    public Integer getCreditScore() {
-        return creditScore;
-    }
-
-    public void setCreditScore(Integer creditScore) {
-        this.creditScore = creditScore;
-    }
-
-    public Double getDebtAmount() {
-        return debtAmount;
-    }
-
-    public void setDebtAmount(Double debtAmount) {
-        this.debtAmount = debtAmount;
-    }
-
-    public Double getAccountBalance() {
-        return accountBalance;
-    }
-
-    public void setAccountBalance(Double accountBalance) {
-        this.accountBalance = accountBalance;
-    }
-
-    public Double getMonthlyExpense() {
-        return monthlyExpense;
-    }
-
-    public void setMonthlyExpense(Double monthlyExpense) {
-        this.monthlyExpense = monthlyExpense;
-    }
-
-    public Integer getTransactionCount() {
-        return transactionCount;
-    }
-
-    public void setTransactionCount(Integer transactionCount) {
-        this.transactionCount = transactionCount;
-    }
-
-    public Double getAvgTransactionAmount() {
-        return avgTransactionAmount;
-    }
-
-    public void setAvgTransactionAmount(Double avgTransactionAmount) {
-        this.avgTransactionAmount = avgTransactionAmount;
-    }
-
-    public Integer getLatePaymentCount() {
-        return latePaymentCount;
-    }
-
-    public void setLatePaymentCount(Integer latePaymentCount) {
-        this.latePaymentCount = latePaymentCount;
-    }
-    public String getOfferType() {
-        return offerType;
-    }
-    public void setOfferType(String offerType) {
-        this.offerType = offerType;
-    }
+    @Column(length = 255)
+    private String existingProducts;
 }

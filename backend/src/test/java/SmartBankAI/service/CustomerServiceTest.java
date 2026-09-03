@@ -1,14 +1,15 @@
 package SmartBankAI.service;
 
-import SmartBankAI.exception.ResourceNotFoundException;
 import SmartBankAI.model.customer;
-import SmartBankAI.repository.customerRepository;
-import org.junit.jupiter.api.DisplayName;
+import SmartBankAI.repository.CustomerRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -18,34 +19,36 @@ import static org.mockito.Mockito.*;
 class CustomerServiceTest {
 
     @Mock
-    private customerRepository customerRepo;
+    private CustomerRepository customerRepository;
 
-    @Test
-    @DisplayName("Mevcut musteri ID sorgulandiginda musteri nesnesi donmelidir")
-    void shouldReturnCustomer_WhenCustomerExists() {
-        customer mockCustomer = new customer();
-        mockCustomer.setCustomerId(1);
-        mockCustomer.setCreditScore(700);
+    @InjectMocks
+    private CustomerService customerService;
 
-        when(customerRepo.findById(1)).thenReturn(Optional.of(mockCustomer));
+    private customer mockCustomer;
 
-        Optional<customer> result = customerRepo.findById(1);
-
-        assertTrue(result.isPresent());
-        assertEquals(1, result.get().getCustomerId());
-        verify(customerRepo, times(1)).findById(1);
+    @BeforeEach
+    void setUp() {
+        mockCustomer = customer.builder()
+                .id(1L)
+                .fullName("Test User")
+                .identityNumber("12345678901")
+                .monthlyIncome(BigDecimal.valueOf(10000))
+                .monthlyExpenses(BigDecimal.valueOf(3000))
+                .totalDebt(BigDecimal.valueOf(5000))
+                .creditScore(700)
+                .activeCreditsCount(1)
+                .latePaymentsCount(0)
+                .monthlyTransactionCount(15)
+                .build();
     }
 
     @Test
-    @DisplayName("Olmayan musteri ID sorgulandiginda ResourceNotFoundException firlatilmalidir")
-    void shouldThrowException_WhenCustomerNotFound() {
-        when(customerRepo.findById(999)).thenReturn(Optional.empty());
+    void testGetCustomerById() {
+        when(customerRepository.findById(1L)).thenReturn(Optional.of(mockCustomer));
 
-        assertThrows(ResourceNotFoundException.class, () -> {
-            customerRepo.findById(999)
-                    .orElseThrow(() -> new ResourceNotFoundException("ID: 999 numarali musteri bulunamadi."));
-        });
+        Optional<customer> result = customerRepository.findById(1L);
 
-        verify(customerRepo, times(1)).findById(999);
+        assertTrue(result.isPresent());
+        assertEquals(1L, result.get().getId());
     }
 }

@@ -1,0 +1,32 @@
+version: '3.8'
+services:
+  ml-service:
+    build:
+      context: ./ml
+      dockerfile: Dockerfile
+    container_name: smartbank-ml
+    ports:
+      - "8000:8000"
+    networks:
+      - smartbank-network
+  backend-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smartbank-backend
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:sqlserver://host.docker.internal:1433;databaseName=SmartBankAI_DB;encrypt=true;trustServerCertificate=true
+      - SPRING_DATASOURCE_USERNAME=smartbank_user
+      - SPRING_DATASOURCE_PASSWORD=YourPassword123*
+      - AI_SERVICE_URL=http://ml-service:8000/predict
+    depends_on:
+      - ml-service
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - smartbank-network
+networks:
+  smartbank-network:
+    driver: bridge
