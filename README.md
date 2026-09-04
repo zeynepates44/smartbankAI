@@ -9,6 +9,11 @@ Sistem; müşterinin finansal durumu, kredi geçmişi, işlem davranışları ve
 SmartBank AI'ın temel amacı yalnızca bir risk yüzdesi üretmek değil; farklı veri kaynaklarını bir araya getirerek **kişiselleştirilmiş, gerekçelendirilmiş (XAI) ve çift dilli (TR/EN)** teklif önerileri oluşturmaktır.
 
 ---
+## 🚀 Canlı Demo (Live Demo)
+
+Uygulama bulut ortamında 7/24 aktif olarak çalışmaktadır:
+* **Web Arayüzü & Backend:** [SmartBank AI Canlı Sistem](https://smartbank-backend-agk3.onrender.com)
+* **AI Servisi API Dokümantasyonu (Swagger):** [FastAPI Swagger UI](https://smartbank-ai-k1i9.onrender.com/docs)
 
 ## Projenin Amacı
 
@@ -127,46 +132,51 @@ Müşteri Temsilcisi (Customer Representative)
 Sistem Mimarisi
 SmartBank AI çok katmanlı, mikroservis odaklı ve gevşek bağlı (loosely coupled) bir mimari kullanır:
 
-BANKA ÇALIŞANI
-                          │
-                          ▼
-              ┌────────────────────────┐
-              │      WEB ARAYÜZÜ       │
-              │   HTML5 / CSS3 / JS    │
-              │  Bootstrap 5.3 + Icons │
-              │  (TR / EN Dil Motoru)  │
-              └───────────┬────────────┘
-                          │
-                          │ HTTP REST API (JSON)
-                          ▼
-              ┌────────────────────────┐
-              │   SPRING BOOT BACKEND  │
-              │       (Port 8081)      │
-              │   Spring Data JPA      │
-              └───────┬────────┬───────┘
-                      │        │
-         JDBC Bağlantısı       │ HTTP POST (Müşteri DTO)
-                      │        │
-                      ▼        ▼
-              ┌──────────┐   ┌────────────────────────┐
-              │  MSSQL   │   │     PYTHON FASTAPI     │
-              │ DATABASE │   │       AI ENGINE        │
-              │ (5.000   │   │      (Port 8000)       │
-              │ Müşteri) │   └───────────┬────────────┘
-              └──────────┘               │
-                                         ▼
-                             ┌────────────────────────┐
-                             │    Scikit-Learn ML     │
-                             │ ────────────────────── │
-                             │ • Kredi Risk Modeli    │
-                             │ • Fraud Risk Modeli    │
-                             │ • Churn Risk Modeli    │
-                             │ • Ürün Öneri Motoru    │
-                             │ • XAI Çıkarım Katmanı  │
-                             │ • Dinamik NLG Özeti    │
-                             └────────────────────────┘
+                     BANKA ÇALIŞANI / KULLANICI
+                                  │
+                                  ▼
+                      ┌────────────────────────┐
+                      │      WEB ARAYÜZÜ       │
+                      │   HTML5 / CSS3 / JS    │
+                      │  Bootstrap 5.3 + Icons │
+                      │  (TR / EN Dil Motoru)  │
+                      └───────────┬────────────┘
+                                  │
+                                  │ HTTPS REST API (JSON)
+                                  ▼
+                      ┌────────────────────────┐
+                      │  SPRING BOOT BACKEND   │
+                      │  (Render Cloud Service)│
+                      │  Docker / Java 21 / JPA│
+                      └───────┬────────┬───────┘
+                              │        │
+               HikariCP (SSL) │        │ HTTPS POST (Müşteri DTO)
+                              │        │
+                              ▼        ▼
+                      ┌──────────┐   ┌────────────────────────┐
+                      │POSTGRESQL│   │     PYTHON FASTAPI     │
+                      │ DATABASE │   │       AI ENGINE        │
+                      │ (Render  │   │  (Render Web Service)  │
+                      │  Cloud)  │   └───────────┬────────────┘
+                      └──────────┘               │
+                                                 ▼
+                                     ┌────────────────────────┐
+                                     │    Scikit-Learn ML     │
+                                     │ ────────────────────── │
+                                     │ • Kredi Risk Modeli    │
+                                     │ • Fraud Risk Modeli    │
+                                     │ • Churn Risk Modeli    │
+                                     │ • Ürün Öneri Motoru    │
+                                     │ • XAI Çıkarım Katmanı  │
+                                     │ • Dinamik NLG Özeti    │
+                                     └────────────────────────┘
 
 
+### Ortam Değişkenleri (Environment Variables)
+Uygulama çalışırken aşağıdaki ortam değişkenlerini kullanır:
+* `SERVER_PORT`: Uygulamanın dinlediği port (varsayılan: `8080`)
+* `AI_SERVICE_URL`: Yapay zeka servisinin uç noktası (örn: `https://smartbank-ai-k1i9.onrender.com/analyze`)
+* `SPRING_DATASOURCE_URL`: PostgreSQL bağlantı URL'i
 
 Teknoloji Stack
 
@@ -197,6 +207,12 @@ Microsoft SQL Server (MSSQL)
 SQL Server Management Studio (SSMS)
 Versiyon Kontrolü
 Git & GitHub
+
+Bulut Altyapısı ve Dağıtım (DevOps)
+
+Cloud & Deployment: Render (PaaS), Docker
+Database: PostgreSQL (Cloud Managed)
+Monitoring & Uptime: UptimeRobot (7/24 Health Check)
 
 
 Veri Seti
